@@ -11,7 +11,7 @@ rope_density = 0.15  # kg/m
 body_mass = [10, 43, 14, 10]  # kg
 body_length = [0.7, 0.7, 0.5, 0.4]  # m
 body_com = [0.45, 0.5, 0.2, 0.25]  # m
-# body_inert = [0, 0, 0, 0]  # kg m2
+body_inert = [0.5, 2.5, 0.35, 0.17]  # kg m2
 
 arms = 0
 torso = 1
@@ -36,15 +36,21 @@ def make_rope() -> list[RigidBody]:
 def make_body() -> list[RigidBody]:
     body = []
     for i in range(len(body_mass)):
-        inert = body_mass[i] * body_length[i] / 12  # TODO: Make accurate
         segment = RigidBody(
-            body_mass[i], body_length[i], body_com[i], inert)
+            body_mass[i], body_length[i], body_com[i], body_inert[i])
         body.append(segment)
     return body
 
 
 if __name__ == "__main__":
+    x = 0
     rope = make_rope()
     body = make_body()
     system = rope + body
     n_segments = rope_segments + len(body_mass)
+
+
+
+
+
+
