@@ -11,8 +11,8 @@ base_vel = [0, 0]
 
 # Settings for the rope
 rope_length = 4  # m
-rope_segments = 1
-rope_angle = -0.75 * np.pi  # rad
+rope_segments = 10
+rope_angle = -0.25 * np.pi  # rad from vertical
 rope_density = 0.15  # kg/m
 
 # Settings for the body
@@ -26,12 +26,13 @@ torso = 1
 upper_leg = 2
 lower_leg = 3
 
-segparms = {'nseg': rope_segments + len(body_mass), # number of segments
-            'm': body_mass, # mass of each segment [kg]
-            'L': body_length, # length of each segment [m]
-            'd': body_com, # distance of COM of segment from proximal joint [m]
-            'J': body_inert, # moment of inertia about COM of segment [kgm**2]
-            'g': g} # gravitational acceleration [m/s**2]
+segparms = {'nseg': rope_segments + len(body_mass),  # number of segments
+            'm': body_mass,  # mass of each segment [kg]
+            'L': body_length,  # length of each segment [m]
+            'd': body_com,  # distance of COM of segment from proximal joint [m]
+            'J': body_inert,  # moment of inertia about COM of segment [kgm**2]
+            'g': g}  # gravitational acceleration [m/s**2]
+
 
 def make_rope() -> list[RigidBody]:
     segment_length = rope_length / rope_segments
@@ -42,8 +43,9 @@ def make_rope() -> list[RigidBody]:
         d = segment_length / 2
         J = m * L ** 2 / 12
         segment = RigidBody(m, L, d, J)
+        segment.phi = rope_angle/rope_segments
         rope.append(segment)
-    rope[0].phi = rope_angle
+    rope[0].phi -= 0.5*np.pi
     return rope
 
 
@@ -53,7 +55,7 @@ def make_body() -> list[RigidBody]:
         segment = RigidBody(
             body_mass[i], body_length[i], body_com[i], body_inert[i])
         body.append(segment)
-    body[0].phi = 0.75*np.pi
+    body[0].phi = -rope_angle
     return body
 
 
@@ -65,6 +67,7 @@ def get_state(system) -> list[float]:
         phids.append(rb.phid)
     return phis + phids + base_pos + base_vel
 
+
 def plot_single_state(system: list[RigidBody]):
     x = 0.0
     y = 0.0
@@ -73,8 +76,8 @@ def plot_single_state(system: list[RigidBody]):
     ys = [y]
     for rb in system:
         angle += rb.phi
-        x += np.cos(angle)*rb.L
-        y += np.sin(angle)*rb.L
+        x += np.cos(angle) * rb.L
+        y += np.sin(angle) * rb.L
         xs.append(x)
         ys.append(y)
     plt.plot(xs, ys)
@@ -89,9 +92,3 @@ if __name__ == "__main__":
     n_segments = rope_segments + len(body_mass)
     plot_single_state(system)
     state = get_state(system)
-
-
-
-
-
-
