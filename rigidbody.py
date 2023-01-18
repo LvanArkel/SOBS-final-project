@@ -1,16 +1,23 @@
+import numpy as np
+
 class RigidBody:
-    def __init__(self, m, L, d, J):
-        self.m = m,
-        self.L = L,
-        self.d = d,
-        self.J = J,
-        self.state = [0, 0]
+    def __init__(self, m, L, d, J, phi=0, phid=0):
+        self.m = m
+        self.L = L
+        self.d = d
+        self.J = J
+        self.phi = phi
+        self.phid = phid
 
-    def angle(self) -> int:
-        return self.state[0]
+    def sin(self) -> float:
+        return np.sin(self.phi)
 
-    def set_angle(self, angle):
-        self.state[0] = angle
+    def cos(self) -> float:
+        return np.cos(self.phi)
 
-    def ang_vel(self) -> int:
-        return self.state[1]
+    def phidsqr(self) -> float:
+        return np.square(self.phid)
+
+    def get_center(self) -> list[float]:
+        return self.d * np.array([self.cos(), self.sin()])
+

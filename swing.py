@@ -1,6 +1,13 @@
 import numpy as np
 from rigidbody import RigidBody
 
+# Global Settings
+g = -9.81
+
+# Settings for the base
+base_pos = [0, 0]
+base_vel = [0, 0]
+
 # Settings for the rope
 rope_length = 4  # m
 rope_segments = 1
@@ -18,6 +25,12 @@ torso = 1
 upper_leg = 2
 lower_leg = 3
 
+segparms = {'nseg': rope_segments + len(body_mass), # number of segments
+            'm': body_mass, # mass of each segment [kg]
+            'L': body_length, # length of each segment [m]
+            'd': body_com, # distance of COM of segment from proximal joint [m]
+            'J': body_inert, # moment of inertia about COM of segment [kgm**2]
+            'g': g} # gravitational acceleration [m/s**2]
 
 def make_rope() -> list[RigidBody]:
     segment_length = rope_length / rope_segments
@@ -29,7 +42,7 @@ def make_rope() -> list[RigidBody]:
         J = m * L ** 2 / 12
         segment = RigidBody(m, L, d, J)
         rope.append(segment)
-    rope[0].set_angle(rope_angle)
+    rope[0].phi = rope_angle
     return rope
 
 
@@ -42,12 +55,23 @@ def make_body() -> list[RigidBody]:
     return body
 
 
+def get_state(system) -> list[float]:
+    phis = []
+    phids = []
+    for i, rb in enumerate(system):
+        phis.append(rb.phi)
+        phids.append(rb.phid)
+    return phis + phids + base_pos + base_vel
+
+
 if __name__ == "__main__":
     x = 0
     rope = make_rope()
     body = make_body()
     system = rope + body
     n_segments = rope_segments + len(body_mass)
+
+    state = get_state(system)
 
 
 
