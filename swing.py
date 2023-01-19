@@ -1,6 +1,7 @@
 import numpy as np
 from rigidbody import RigidBody
 import matplotlib.pyplot as plt
+import segdyn_new
 
 # Global Settings
 g = -9.81
@@ -89,6 +90,7 @@ if __name__ == "__main__":
     rope = make_rope()
     body = make_body()
     system = rope + body
-    n_segments = rope_segments + len(body_mass)
     plot_single_state(system)
-    state = get_state(system)
+
+
+    segdyn_new.segdyn(system, )
