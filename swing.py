@@ -84,6 +84,45 @@ def plot_single_state(system: list[RigidBody]):
     plt.plot(xs, ys)
     plt.show()
 
+swingparms = {
+    'segparms': segparms
+}
+
+def readsegparms(segparms):
+    nseg = segparms['nseg']
+    m = segparms['m']
+    L = segparms['L']
+    J = segparms['J']
+    d = segparms['d']
+    g = segparms['g']
+    return nseg, m, L, J, d, g
+
+def readsegdynstate(segdynstate, nseg):
+    phis = segdynstate[0:nseg]
+    phids = segdynstate[nseg:2 * nseg]
+    base_pos = segdynstate[2 * nseg:2 * nseg + 2]
+    base_vel = segdynstate[2 * nseg + 2:2 * nseg + 4]
+    Ms = state[2 * nseg + 4: 2 * nseg + 6]
+    return phis, phids, base_pos, base_vel, Ms
+
+def swingshell(t, state, parms):
+    segparms = parms['segparms']
+    nseg, m, L, J, d, g = readsegparms(segparms)
+
+    segdynstate = state[0: 2 * nseg + 4]
+    phis, phids, base_pos, base_vel, Ms = readsegdynstate(segdynstate, nseg)
+
+    # V 7 * nseg + 5
+    Fx = np.array([])       # Fx nseg + 1,
+    Fy = np.array([])       # Fy nseg + 1,
+    M = np.array([])        # M nseg + 1,
+    Fextx = np.zeros(nseg)    # Fextx nseg,
+    Fexty = m * g           # Fexty nseg,
+    Mext = np.zeros(nseg)   # Mext nseg,
+    phidd = np.full(nseg, np.nan)    # phidd nseg,
+    base_acc = [0, 0]       # xbdd, ybdd
+    V = np.concatenate(Fx, Fy, M, Fextx, Fexty, Mext, phidd, base_acc)
+
 
 if __name__ == "__main__":
     x = 0
