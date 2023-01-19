@@ -15,7 +15,7 @@ base_vel = [0, 0]
 # Settings for the rope
 rope_length = 4  # m
 rope_segments = 4
-rope_angle = -0.25 * np.pi  # rad from vertical
+rope_angle = -0.5 * np.pi  # rad from vertical
 rope_density = 0.15  # kg/m
 
 # Settings for the body
@@ -29,6 +29,7 @@ torso = 1
 upper_leg = 2
 lower_leg = 3
 
+
 def make_rope() -> list[RigidBody]:
     segment_length = rope_length / rope_segments
     rope = []
@@ -38,9 +39,8 @@ def make_rope() -> list[RigidBody]:
         d = segment_length / 2
         J = m * L ** 2 / 12
         segment = RigidBody(m, L, d, J)
-        segment.phi = rope_angle/rope_segments
+        segment.phi = rope_angle
         rope.append(segment)
-    rope[0].phi -= 0.5*np.pi
     return rope
 
 
@@ -48,9 +48,8 @@ def make_body() -> list[RigidBody]:
     body = []
     for i in range(len(body_mass)):
         segment = RigidBody(
-            body_mass[i], body_length[i], body_com[i], body_inert[i])
+            body_mass[i], body_length[i], body_com[i], body_inert[i], phi=rope_angle)
         body.append(segment)
-    body[0].phi = -rope_angle
     return body
 
 
@@ -121,34 +120,68 @@ def readsegdynstate(segdynstate, nseg):
 
 def swingparms(system):
     segparms = get_segparms(system)
+    rope_stiffness = 50
+    rope_damping = 5
+    frequency = 2.5
+    hip_moment_mult = 100
     swingparms = {
-        'segparms': segparms
+        'segparms': segparms,
+        'rope_stiffness': rope_stiffness,
+        'rope_damping': rope_damping,
+        'frequency': frequency,
+        'hip_moment_mult': hip_moment_mult
     }
     return swingparms
 
+
 def swingstate(system):
     segdynstate = get_state(system)
-    state = np.copy(segdynstate)
-
+    # Ms = np.zeros(rope_segments)
+    state = segdynstate
     return state
+
 
 def swingshell(t, state, parms):
     segparms = parms['segparms']
     nseg, m, L, J, d, g = readsegparms(segparms)
+    rope_stiffness = parms['rope_stiffness']
+    rope_damping = parms['rope_damping']
+    frequency = parms['frequency']
+    hip_moment_mult = parms['hip_moment_mult']
 
     segdynstate = state[0: 2 * nseg + 4]
     phis, phids, base_pos, base_vel = readsegdynstate(segdynstate, nseg)
+    # Ms = state[2 * nseg + 4: 2 * nseg + 4 + rope_segments]
+
+    Ms = np.array([])
+    for index, rb in enumerate(system):
+        # if index < rope_segments:
+        phi = - 0.5 * np.pi - phis[index]
+        phid = phids[index]
+        if index != 0:
+            phi = phis[index - 1] - phis[index]
+            phid = phids[index - 1] - phids[index]
+
+        stiff = rope_stiffness * phi
+        damp = rope_damping * phid
+        moment = stiff + damp
+        Ms = np.append(Ms, moment)
+
+    hip_moment = np.sin(frequency * t) * hip_moment_mult
+    Ms[-2] = hip_moment
 
     # V 7 * nseg + 5
     Fx = np.concatenate((np.full(nseg, np.nan), np.array([0])))        # Fx nseg + 1,
     Fy = np.concatenate((np.full(nseg, np.nan), np.array([0])))       # Fy nseg + 1,
-    M = np.zeros(nseg + 1)        # M nseg + 1,
+    M = np.concatenate((Ms, np.zeros(1)))        # M nseg + 1,
     Fextx = np.zeros(nseg)    # Fextx nseg,
     Fexty = m * g           # Fexty nseg,
     Mext = np.zeros(nseg)   # Mext nseg,
     phidd = np.full(nseg, np.nan)    # phidd nseg,
     base_acc = [0, 0]       # xbdd, ybdd
+
     V = np.concatenate((Fx, Fy, M, Fextx, Fexty, Mext, phidd, base_acc))
+    # print(f"Length V: {len(V)}, should be: {7 * nseg + 5}")
 
     segdynstated, Vnew = segdyn(segdynstate, segparms, V)
 
@@ -159,17 +192,27 @@ def swingshell(t, state, parms):
 
 
 def swing(system):
-    initial_state = get_state(system)
+    initial_state = swingstate(system)
     parms = swingparms(system)
-
     print(parms)
 
-    t_span = [0, 3]
+    t_span = [0, 5]
     ODE = lambda t, state: swingshell(t, state, parms)[0]
 
     sol = integrate.solve_ivp(ODE, t_span, initial_state, rtol=1e-8, atol=1e-8)
 
-    output = animate(sol.t, sol.y, parms['segparms'])
+    segparms = parms['segparms']
+    segdynstate = sol.y[0: 2 * segparms['nseg'] + 4]
+    plot_energies(segdynstate, segparms, sol.t)
+
+    return sol, segparms
+
+
+def plot_energies(segdynstate, segparms, time):
+    Ekinx, Ekiny, Erot, Epot, Etot = energy(segdynstate, segparms)
+    # plt.plot(time, np.add(Ekinx, Ekiny, Erot))
+    # plt.plot(time, Epot)
+    plt.plot(time, Etot)
 
 
 if __name__ == "__main__":
@@ -178,5 +221,13 @@ if __name__ == "__main__":
     body = make_body()
     system = rope + body
 
-    swing(system)
+    # plot_single_state(system)
+
+    sol, segparms = swing(system)
+
+    # state0 = sol.y[0]
+    # phis, phids, base_pos, base_vel = readsegdynstate(state0, len(system))
+    # print(f"Phis: {phis}")
+
+    animate(sol.t, sol.y, segparms, axlim=6)
 
