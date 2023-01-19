@@ -1,5 +1,5 @@
 import numpy as np
-import scipy as sp
+import scipy.integrate as integrate
 from rigidbody import RigidBody
 import matplotlib.pyplot as plt
 import segdyn_new
@@ -14,7 +14,7 @@ base_vel = [0, 0]
 
 # Settings for the rope
 rope_length = 4  # m
-rope_segments = 10
+rope_segments = 4
 rope_angle = -0.25 * np.pi  # rad from vertical
 rope_density = 0.15  # kg/m
 
@@ -164,10 +164,10 @@ def swing(system):
 
     print(parms)
 
-    t_span = [0, 2]
+    t_span = [0, 3]
     ODE = lambda t, state: swingshell(t, state, parms)[0]
 
-    sol = sp.integrate.solve_ivp(ODE, t_span, initial_state, rtol=1e-8, atol=1e-8)
+    sol = integrate.solve_ivp(ODE, t_span, initial_state, rtol=1e-8, atol=1e-8)
 
     output = animate(sol.t, sol.y, parms['segparms'])
 

@@ -1,9 +1,9 @@
 import numpy as np
 import copy
+from rigidbody import RigidBody
 
-
-def segdyn(state, V, Acons=None, Bcons=None):
-    bodies, base_state = state
+def segdyn(state: (list[RigidBody], ((float, float), (float, float))), V, Acons=None, Bcons=None):
+    bodies, (base_pos, base_vel) = state
     n = len(bodies)
     unknowns = [i for i in range(len(V)) if V[i] is None]
     knowns = [i for i in range(len(V)) if V[i] is not None]
@@ -56,10 +56,11 @@ def segdyn(state, V, Acons=None, Bcons=None):
     for i, u in enumerate(unknowns):
         Vnew[u] = x[i]
     bodiesd = []
-    based = (Vnew[-2], Vnew[-1])
-    for (rb, phid) in zip(bodies, Vnew[6*n+3:7*n+3]):
-        rbd = copy.copy(rb)
-        rbd.phi = rb.phid
-        rbd.phid = phid
-        bodiesd.append(rbd)
-    return (bodiesd, based), Vnew
+    base_acc = (Vnew[-2], Vnew[-1])
+    for (rb, phidd) in zip(bodies, Vnew[6*n+3:7*n+3]):
+        phid = rb.phid
+        phidd = phidd
+        bodiesd.append((phid, phidd))
+    return (bodiesd, (base_vel, base_acc)), Vnew
+
+
