@@ -1,7 +1,9 @@
 import numpy as np
+import scipy as sp
 from rigidbody import RigidBody
 import matplotlib.pyplot as plt
 import segdyn_new
+from segdyn import *
 
 # Global Settings
 g = -9.81
@@ -17,23 +19,15 @@ rope_angle = -0.25 * np.pi  # rad from vertical
 rope_density = 0.15  # kg/m
 
 # Settings for the body
-body_mass = [10, 43, 14, 10]  # kg
-body_length = [0.7, 0.7, 0.5, 0.4]  # m
-body_com = [0.45, 0.5, 0.2, 0.25]  # m
-body_inert = [0.5, 2.5, 0.35, 0.17]  # kg m2
+body_mass = np.array([10, 43, 14, 10])  # kg
+body_length = np.array([0.7, 0.7, 0.5, 0.4])  # m
+body_com = np.array([0.45, 0.5, 0.2, 0.25])  # m
+body_inert = np.array([0.5, 2.5, 0.35, 0.17])  # kg m2
 
 arms = 0
 torso = 1
 upper_leg = 2
 lower_leg = 3
-
-segparms = {'nseg': rope_segments + len(body_mass),  # number of segments
-            'm': body_mass,  # mass of each segment [kg]
-            'L': body_length,  # length of each segment [m]
-            'd': body_com,  # distance of COM of segment from proximal joint [m]
-            'J': body_inert,  # moment of inertia about COM of segment [kgm**2]
-            'g': g}  # gravitational acceleration [m/s**2]
-
 
 def make_rope() -> list[RigidBody]:
     segment_length = rope_length / rope_segments
@@ -69,6 +63,28 @@ def get_state(system) -> list[float]:
     return phis + phids + base_pos + base_vel
 
 
+def get_segparms(system):
+    nseg = len(system)
+    m = np.array([])
+    L = np.array([])
+    J = np.array([])
+    d = np.array([])
+    for rb in system:
+        m = np.append(m, rb.m)
+        L = np.append(L, rb.L)
+        J = np.append(J, rb.J)
+        d = np.append(d, rb.d)
+
+    segparms = {'nseg': nseg,  # number of segments
+                'm': m,  # mass of each segment [kg]
+                'L': L,  # length of each segment [m]
+                'd': d,  # distance of COM of segment from proximal joint [m]
+                'J': J,  # moment of inertia about COM of segment [kgm**2]
+                'g': g}  # gravitational acceleration [m/s**2]
+
+    return segparms
+
+
 def plot_single_state(system: list[RigidBody]):
     x = 0.0
     y = 0.0
@@ -83,10 +99,6 @@ def plot_single_state(system: list[RigidBody]):
         ys.append(y)
     plt.plot(xs, ys)
     plt.show()
-
-swingparms = {
-    'segparms': segparms
-}
 
 
 def readsegparms(segparms):
@@ -104,27 +116,60 @@ def readsegdynstate(segdynstate, nseg):
     phids = segdynstate[nseg:2 * nseg]
     base_pos = segdynstate[2 * nseg:2 * nseg + 2]
     base_vel = segdynstate[2 * nseg + 2:2 * nseg + 4]
-    Ms = state[2 * nseg + 4: 2 * nseg + 6]
-    return phis, phids, base_pos, base_vel, Ms
+    return phis, phids, base_pos, base_vel
 
+
+def swingparms(system):
+    segparms = get_segparms(system)
+    swingparms = {
+        'segparms': segparms
+    }
+    return swingparms
+
+def swingstate(system):
+    segdynstate = get_state(system)
+    state = np.copy(segdynstate)
+
+    return state
 
 def swingshell(t, state, parms):
     segparms = parms['segparms']
     nseg, m, L, J, d, g = readsegparms(segparms)
 
     segdynstate = state[0: 2 * nseg + 4]
-    phis, phids, base_pos, base_vel, Ms = readsegdynstate(segdynstate, nseg)
+    phis, phids, base_pos, base_vel = readsegdynstate(segdynstate, nseg)
 
     # V 7 * nseg + 5
-    Fx = np.array([])       # Fx nseg + 1,
-    Fy = np.array([])       # Fy nseg + 1,
-    M = np.array([])        # M nseg + 1,
+    Fx = np.concatenate((np.full(nseg, np.nan), np.array([0])))        # Fx nseg + 1,
+    Fy = np.concatenate((np.full(nseg, np.nan), np.array([0])))       # Fy nseg + 1,
+    M = np.zeros(nseg + 1)        # M nseg + 1,
     Fextx = np.zeros(nseg)    # Fextx nseg,
     Fexty = m * g           # Fexty nseg,
     Mext = np.zeros(nseg)   # Mext nseg,
     phidd = np.full(nseg, np.nan)    # phidd nseg,
     base_acc = [0, 0]       # xbdd, ybdd
-    V = np.concatenate(Fx, Fy, M, Fextx, Fexty, Mext, phidd, base_acc)
+    V = np.concatenate((Fx, Fy, M, Fextx, Fexty, Mext, phidd, base_acc))
+
+    segdynstated, Vnew = segdyn(segdynstate, segparms, V)
+
+    stated = np.copy(segdynstated)
+    output = np.copy(Vnew)
+
+    return stated, output
+
+
+def swing(system):
+    initial_state = get_state(system)
+    parms = swingparms(system)
+
+    print(parms)
+
+    t_span = [0, 2]
+    ODE = lambda t, state: swingshell(t, state, parms)[0]
+
+    sol = sp.integrate.solve_ivp(ODE, t_span, initial_state, rtol=1e-8, atol=1e-8)
+
+    output = animate(sol.t, sol.y, parms['segparms'])
 
 
 if __name__ == "__main__":
@@ -132,7 +177,6 @@ if __name__ == "__main__":
     rope = make_rope()
     body = make_body()
     system = rope + body
-    plot_single_state(system)
 
+    swing(system)
 
-    segdyn_new.segdyn(system, )
