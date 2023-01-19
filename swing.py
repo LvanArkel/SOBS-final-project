@@ -88,6 +88,7 @@ swingparms = {
     'segparms': segparms
 }
 
+
 def readsegparms(segparms):
     nseg = segparms['nseg']
     m = segparms['m']
@@ -97,6 +98,7 @@ def readsegparms(segparms):
     g = segparms['g']
     return nseg, m, L, J, d, g
 
+
 def readsegdynstate(segdynstate, nseg):
     phis = segdynstate[0:nseg]
     phids = segdynstate[nseg:2 * nseg]
@@ -104,6 +106,7 @@ def readsegdynstate(segdynstate, nseg):
     base_vel = segdynstate[2 * nseg + 2:2 * nseg + 4]
     Ms = state[2 * nseg + 4: 2 * nseg + 6]
     return phis, phids, base_pos, base_vel, Ms
+
 
 def swingshell(t, state, parms):
     segparms = parms['segparms']
