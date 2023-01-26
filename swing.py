@@ -15,7 +15,7 @@ base_vel = [0, 0]
 # Settings for the rope
 rope_length = 4  # m
 rope_segments = 4
-rope_angle = -0.5 * np.pi  # rad from vertical
+rope_angle = -0.6 * np.pi  # rad from vertical
 rope_density = 0.15  # kg/m
 
 # Settings for the body
@@ -121,9 +121,9 @@ def readsegdynstate(segdynstate, nseg):
 def swingparms(system):
     segparms = get_segparms(system)
     rope_stiffness = 50
-    rope_damping = 15
+    rope_damping = 10
     frequency = 2.5
-    hip_moment_mult = 60
+    hip_moment_mult = 150
     shoulder_moment_mult = 30
     swingparms = {
         'segparms': segparms,
@@ -175,9 +175,9 @@ def swingshell(t, state, parms):
     # hip_moment = np.sin(frequency * t) * hip_moment_mult
     # hip_moment = rope_ang * hip_moment_mult
     hip_moment = rope_vel * hip_moment_mult
-    shoulder_moment = rope_vel * shoulder_moment_mult
-    Ms[-2] = hip_moment
-    Ms[-3] = shoulder_moment
+    # shoulder_moment = rope_vel * shoulder_moment_mult
+    Ms[-2] += hip_moment
+    # Ms[-3] += shoulder_moment
     # print(f"Moment {hip_moment}, Rope Ang {rope_ang}, Rope Acc {rope_acc}")
 
 
@@ -207,7 +207,7 @@ def swing(system):
     parms = swingparms(system)
     print(parms)
 
-    t_span = [0, 5]
+    t_span = [0, 10]
     ODE = lambda t, state: swingshell(t, state, parms)[0]
 
     sol = integrate.solve_ivp(ODE, t_span, initial_state, rtol=1e-8, atol=1e-8)
@@ -295,5 +295,5 @@ if __name__ == "__main__":
     # phis, phids, base_pos, base_vel = readsegdynstate(state0, len(system))
     # print(f"Phis: {phis}")
 
-    our_animate(sol.t, sol.y, segparms, axlim=6)
+    our_animate(sol.t, sol.y, segparms, axlim=7)
 
