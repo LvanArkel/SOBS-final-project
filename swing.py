@@ -150,6 +150,7 @@ def swingshell(t, state, parms):
     rope_damping = parms['rope_damping']
     frequency = parms['frequency']
     hip_moment_mult = parms['hip_moment_mult']
+    shoulder_moment_mult = parms['shoulder_moment_mult']
 
     segdynstate = state[0: 2 * nseg + 4]
     phis, phids, base_pos, base_vel = readsegdynstate(segdynstate, nseg)
@@ -213,7 +214,11 @@ def swing(system):
 
     segparms = parms['segparms']
     segdynstate = sol.y[0: 2 * segparms['nseg'] + 4]
+    plt.figure()
     plot_energies(segdynstate, segparms, sol.t)
+    plt.figure()
+    plot_feet_y(segdynstate, segparms, sol.t)
+
 
     return sol, segparms
 
@@ -223,6 +228,11 @@ def plot_energies(segdynstate, segparms, time):
     # plt.plot(time, np.add(Ekinx, Ekiny, Erot))
     # plt.plot(time, Epot)
     plt.plot(time, Etot)
+
+def plot_feet_y(segdynstate, segparms, time):
+    joint, *_ = jointcoord(segdynstate, segparms)
+    _, jointy = joint
+    plt.plot(time, jointy[-1, :])
 
 def our_animate(t,segdynstate,segparms,axlim=2):
     # nr of frames and time interval, such that total simulation time is accurate
@@ -238,8 +248,6 @@ def our_animate(t,segdynstate,segparms,axlim=2):
     # calculate joint coordinates
     joint, *_ = jointcoord(segdynstate_new, segparms)
     jointx, jointy = joint
-
-    # determine range of image?? / user defined initial frame??
 
     # initiate figure
     fig = plt.figure()
