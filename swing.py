@@ -98,25 +98,25 @@ def plot_angmom(systemstates, solt, parms):
     for val in resize:
         parms[val] = parms[val][-4:]
     parms['nseg'] = 4
-    print(f"Parms {parms}")
+    # print(f"Parms {parms}")
     body_phis = systemstates[4:8]
     body_phids = systemstates[12:16]
     base_pos_vel = systemstates[16:]
-    print(f"Phis {body_phis}, Phids {body_phids}, pos_vel {base_pos_vel}")
+    # print(f"Phis {body_phis}, Phids {body_phids}, pos_vel {base_pos_vel}")
     bodystates = np.concatenate((body_phis, body_phids, base_pos_vel))
-    print(f"Body states {len(bodystates)}")
+    # print(f"Body states {len(bodystates)}")
 
     ang, _ = angmom(bodystates, parms)
     plt.plot(solt, ang)
     idx = np.argmax(ang)
     print(f"Index, {idx}, Time of most ang mom {solt[idx]}")
-    last_y = [[item[idx]] for item in bodystates]
-    print(f"LAst y {last_y}")
-
-    _, (jointxd, jointyd), _ = jointcoord([last_y], parms)
-    arm_base_vel = [jointxd[4], jointyd[4]]
-    print(f"Arm base Vel {repr(arm_base_vel)}")
-    print(f"State of most ang mom {repr([item[0] for item in last_y])}")
+    # last_y = [[item[idx]] for item in bodystates]
+    # print(f"LAst y {last_y}")
+    #
+    # _, (jointxd, jointyd), _ = jointcoord([last_y], parms)
+    # arm_base_vel = [jointxd[4], jointyd[4]]
+    # print(f"Arm base Vel {repr(arm_base_vel)}")
+    # print(f"State of most ang mom {repr([item[0] for item in last_y])}")
 
 
 
@@ -125,7 +125,7 @@ def swing(system, base_pos, base_vel):
     parms = swingparms(system)
     print(parms)
 
-    t_span = [120, 130]
+    t_span = [120, 124.57723045423722]
     ODE = lambda t, state: swingshell(t, state, parms)[0]
 
     sol = integrate.solve_ivp(ODE, t_span, initial_state, rtol=1e-8, atol=1e-8)

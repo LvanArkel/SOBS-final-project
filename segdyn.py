@@ -273,7 +273,7 @@ def jointcoord(segdynstate,segparms,segdynstated=None):
     
     # calculate coordinates
     for i in range(nseg):
-        print(f"Coords {len(jointx)}, {len(L)}, {len(phi)}")
+        # print(f"Coords {len(jointx)}, {len(L)}, {len(phi)}")
         jointx = np.vstack((jointx, jointx[i]+L[i]*np.cos(phi[i])))
         jointy = np.vstack((jointy, jointy[i]+L[i]*np.sin(phi[i])))
         jointxd = np.vstack((jointxd, jointxd[i]-L[i]*np.sin(phi[i])*phid[i]))
