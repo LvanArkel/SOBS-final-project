@@ -220,6 +220,10 @@ def swing(system):
     plot_feet_y(segdynstate, segparms, sol.t)
 
 
+
+    print(segdynstate[:, -1])
+
+
     return sol, segparms
 
 
