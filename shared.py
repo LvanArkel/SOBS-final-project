@@ -1,5 +1,6 @@
 from segdyn import *
 from rigidbody import RigidBody
+import copy
 import scipy.integrate as integrate
 
 

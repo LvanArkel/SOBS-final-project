@@ -93,7 +93,7 @@ def plot_angmom(systemstates, solt, parms):
     # systemstates = (nseg, nsamples
     print(f"Systemstates {systemstates}, Len {len(systemstates)}")
     print(f"Parms, {parms}")
-
+    parms = copy.deepcopy(parms)
     resize = ['m', 'L', 'd', 'J']
     for val in resize:
         parms[val] = parms[val][-4:]
@@ -107,10 +107,12 @@ def plot_angmom(systemstates, solt, parms):
     print(f"Body states {len(bodystates)}")
 
     ang, _ = angmom(bodystates, parms)
-    plt.plot(ang, solt)
+    plt.plot(solt, ang)
     idx = np.argmax(ang)
-    print(f"Time of most ang mom {solt[idx]}")
+    print(f"Index, {idx}, Time of most ang mom {solt[idx]}")
     last_y = [[item[idx]] for item in bodystates]
+    print(f"LAst y {last_y}")
+
     _, (jointxd, jointyd), _ = jointcoord([last_y], parms)
     arm_base_vel = [jointxd[4], jointyd[4]]
     print(f"Arm base Vel {repr(arm_base_vel)}")
@@ -123,7 +125,7 @@ def swing(system, base_pos, base_vel):
     parms = swingparms(system)
     print(parms)
 
-    t_span = [120, 121]
+    t_span = [120, 130]
     ODE = lambda t, state: swingshell(t, state, parms)[0]
 
     sol = integrate.solve_ivp(ODE, t_span, initial_state, rtol=1e-8, atol=1e-8)

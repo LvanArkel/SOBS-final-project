@@ -254,7 +254,7 @@ def jointcoord(segdynstate,segparms,segdynstated=None):
     yb=segdynstate[2*nseg+1:2*nseg+2]
     xbd=segdynstate[2*nseg+2:2*nseg+3]
     ybd=segdynstate[2*nseg+3:2*nseg+4]
-    
+
     if segdynstated is not None:
         do_second_deriv=True
         phidd=segdynstated[nseg:2*nseg]
