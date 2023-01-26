@@ -33,6 +33,7 @@ def swingstate(system, base_pos, base_vel):
  -0.13438966, -0.59134242, -1.70180314, -2.32473594,  0.,          0.,
   0.,          0.        ]
 
+    # segdynstate = get_state(system)
     # Ms = np.zeros(rope_segments)
     state = segdynstate
     return state
@@ -70,7 +71,7 @@ def swingshell(t, state, parms):
     hip_moment = np.sin(frequency * t) * hip_moment_mult
     # hip_moment = rope_ang * hip_moment_mult
     # hip_moment = rope_vel * hip_moment_mult
-    # shoulder_moment = rope_vel * shoulder_moment_mult
+
     Ms[-2] += hip_moment
     # Ms[-3] += shoulder_moment
     # print(f"Moment {hip_moment}, Rope Ang {rope_ang}, Rope Acc {rope_acc}")
@@ -103,7 +104,7 @@ def swing(system, base_pos, base_vel):
     parms = swingparms(system)
     print(parms)
 
-    t_span = [120, 121]
+    t_span = [0, 30]
     ODE = lambda t, state: swingshell(t, state, parms)[0]
 
     sol = integrate.solve_ivp(ODE, t_span, initial_state, rtol=1e-8, atol=1e-8)
@@ -115,9 +116,7 @@ def swing(system, base_pos, base_vel):
     plt.figure()
     plot_feet_y(segdynstate, segparms, sol.t)
 
-
-
-    print(segdynstate[:, -1])
+    print(f"Last State: {segdynstate[:, -1]}")
 
 
     return sol, segparms
@@ -131,7 +130,7 @@ def our_animate(t,segdynstate,segparms,axlim=2):
     time_interval = 0.05  # 50 milliseconds for each frame
     nseg = segparms['nseg']
     nr_frames = np.ceil((t[-1] - t[0]) / time_interval).astype(int) + 1
-    t_new = np.linspace(t[0], t[-1], num=nr_frames)
+    t_new = np.linspace(0, t[-1], num=nr_frames)
     segdynstate_new = np.zeros((2 * nseg + 4, nr_frames))
     for i in range(2 * nseg + 4):
         segdynstate_new[i, :] = np.interp(t_new, t, segdynstate[i])
