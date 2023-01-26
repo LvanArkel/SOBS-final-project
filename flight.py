@@ -52,8 +52,6 @@ def flightshell(t, state, parms):
         moment = stiff + damp
         Ms = np.append(Ms, moment)
 
-    rope_ang = phis[0] + 0.5 * np.pi
-    rope_vel = phids[0]
     # hip_moment = np.sin(frequency * t) * hip_moment_mult
     # hip_moment = rope_ang * hip_moment_mult
     # hip_moment = rope_vel * hip_moment_mult
@@ -89,7 +87,7 @@ def flight(system):
     parms = flightparms(system)
     print(parms)
 
-    t_span = [45, 55]
+    t_span = [0, 10]
     ODE = lambda t, state: flightshell(t, state, parms)[0]
 
     sol = integrate.solve_ivp(ODE, t_span, initial_state, rtol=1e-8, atol=1e-8)
@@ -120,4 +118,4 @@ if __name__ == "__main__":
     # phis, phids, base_pos, base_vel = readsegdynstate(state0, len(system))
     # print(f"Phis: {phis}")
 
-    animate(sol.t, sol.y, segparms, axlim=7)
+    our_animate(sol.t, sol.y, segparms, axlim=7)

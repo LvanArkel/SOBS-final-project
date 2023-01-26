@@ -33,10 +33,10 @@ def swingstate(system):
 
     # segdynstate = get_state(system)
     # Ms = np.zeros(rope_segments)
-    segdynstate = get_state(system)
-    segdynstate = [-2.0541526, -2.09858616, -2.09903548, -2.085879, -2.13957014, -1.26554274,
-     -1.4586276,   0.89461135,  0.89946407,  0.87659005,  0.94474495,  1.47547233,
-     3.44077558,  3.44315349,  0,          0,          0,          0]
+    # segdynstate = get_state(system, base_pos, base_vel)
+    # segdynstate = [-2.0541526, -2.09858616, -2.09903548, -2.085879, -2.13957014, -1.26554274,
+    #  -1.4586276,   0.89461135,  0.89946407,  0.87659005,  0.94474495,  1.47547233,
+    #  3.44077558,  3.44315349,  0,          0,          0,          0]
      # Ms = np.zeros(rope_segments)
     state = segdynstate
     return state
@@ -52,6 +52,7 @@ def swingshell(t, state, parms):
     shoulder_moment_mult = parms['shoulder_moment_mult']
 
     segdynstate = state[0: 2 * nseg + 4]
+
     phis, phids, base_pos, base_vel = readsegdynstate(segdynstate, nseg)
     # Ms = state[2 * nseg + 4: 2 * nseg + 4 + rope_segments]
 
@@ -92,7 +93,6 @@ def swingshell(t, state, parms):
 
     V = np.concatenate((Fx, Fy, M, Fextx, Fexty, Mext, phidd, base_acc))
     # print(f"Length V: {len(V)}, should be: {7 * nseg + 5}")
-
     segdynstated, Vnew = segdyn(segdynstate, segparms, V)
 
     stated = np.copy(segdynstated)
@@ -106,7 +106,7 @@ def swing(system):
     parms = swingparms(system)
     print(parms)
 
-    t_span = [0, 30]
+    t_span = [0, 1]
     ODE = lambda t, state: swingshell(t, state, parms)[0]
 
     sol = integrate.solve_ivp(ODE, t_span, initial_state, rtol=1e-8, atol=1e-8)
@@ -125,63 +125,6 @@ def swing(system):
 
 
     return sol, segparms
-
-
-
-
-def our_animate(t,segdynstate,segparms,axlim=2):
-    # nr of frames and time interval, such that total simulation time is accurate
-    # interpolate data to match framerate of animator
-    time_interval = 0.05  # 50 milliseconds for each frame
-    nseg = segparms['nseg']
-    nr_frames = np.ceil((t[-1] - t[0]) / time_interval).astype(int) + 1
-    t_new = np.linspace(0, t[-1], num=nr_frames)
-    segdynstate_new = np.zeros((2 * nseg + 4, nr_frames))
-    for i in range(2 * nseg + 4):
-        segdynstate_new[i, :] = np.interp(t_new, t, segdynstate[i])
-
-    # calculate joint coordinates
-    joint, *_ = jointcoord(segdynstate_new, segparms)
-    jointx, jointy = joint
-
-    # initiate figure
-    fig = plt.figure()
-    ax = plt.axes(xlim=(-axlim, axlim),
-                  ylim=(-axlim, axlim))
-    ax.set_aspect('equal', adjustable='box')
-    line_rope, = ax.plot([], [], lw=2)
-    line_body, = ax.plot([], [], lw=2)
-
-    # initiate line
-    def init_fig():
-        line_rope.set_data([], [])
-        line_body.set_data([], [])
-        return [line_rope, line_body]
-
-    def animate(i, jointx, jointy):
-        # appending values to the previously
-        # empty x and y data holders
-        xdata = jointx[:, i]
-        ydata = jointy[:, i]
-        line_rope.set_data(xdata[:-4], ydata[:-4])
-        line_body.set_data(xdata[-5:], ydata[-5:])
-        return [line_rope, line_body]
-
-    # calling the animation function
-    anim = animation.FuncAnimation(fig, animate, init_func=init_fig,
-                                   fargs=(jointx, jointy),
-                                   frames=nr_frames,
-                                   interval=time_interval * 1000,
-                                   blit=True)
-    # make sure plot renders and shows
-    plt.draw()
-    plt.show()
-
-    # save the animation somewhere. To be implemented later ??
-    # anim.save('whateverName.mp4', writer = 'ffmpeg', fps = 1/time_interval/1000??)
-
-    return anim  # NECESARRY to return!!
-
 
 if __name__ == "__main__":
     x = 0
