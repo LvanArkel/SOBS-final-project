@@ -207,14 +207,18 @@ def swing(system):
     parms = swingparms(system)
     print(parms)
 
-    t_span = [0, 10]
+    t_span = [0, 1]
     ODE = lambda t, state: swingshell(t, state, parms)[0]
 
     sol = integrate.solve_ivp(ODE, t_span, initial_state, rtol=1e-8, atol=1e-8)
 
     segparms = parms['segparms']
     segdynstate = sol.y[0: 2 * segparms['nseg'] + 4]
+    plt.figure()
     plot_energies(segdynstate, segparms, sol.t)
+    plt.figure()
+    plot_feet_y(segdynstate, segparms, sol.t)
+
 
     return sol, segparms
 
@@ -224,6 +228,11 @@ def plot_energies(segdynstate, segparms, time):
     # plt.plot(time, np.add(Ekinx, Ekiny, Erot))
     # plt.plot(time, Epot)
     plt.plot(time, Etot)
+
+def plot_feet_y(segdynstate, segparms, time):
+    joint, *_ = jointcoord(segdynstate, segparms)
+    _, jointy = joint
+    plt.plot(time, jointy[-1, :])
 
 def our_animate(t,segdynstate,segparms,axlim=2):
     # nr of frames and time interval, such that total simulation time is accurate
@@ -239,8 +248,6 @@ def our_animate(t,segdynstate,segparms,axlim=2):
     # calculate joint coordinates
     joint, *_ = jointcoord(segdynstate_new, segparms)
     jointx, jointy = joint
-
-    # determine range of image?? / user defined initial frame??
 
     # initiate figure
     fig = plt.figure()
