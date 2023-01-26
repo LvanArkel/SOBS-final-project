@@ -13,8 +13,8 @@ base_pos = [0, 0]
 base_vel = [0, 0]
 
 # Settings for the rope
-rope_length = 4  # m
-rope_segments = 4
+rope_length = 2  # m
+rope_segments = 3
 rope_angle = -0.6 * np.pi  # rad from vertical
 rope_density = 0.15  # kg/m
 
@@ -122,7 +122,7 @@ def swingparms(system):
     segparms = get_segparms(system)
     rope_stiffness = 50
     rope_damping = 10
-    frequency = 1.25
+    frequency = 1.7
     hip_moment_mult = 150
     shoulder_moment_mult = 0.7
     swingparms = {
