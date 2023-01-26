@@ -225,6 +225,61 @@ def plot_energies(segdynstate, segparms, time):
     # plt.plot(time, Epot)
     plt.plot(time, Etot)
 
+def our_animate(t,segdynstate,segparms,axlim=2):
+    # nr of frames and time interval, such that total simulation time is accurate
+    # interpolate data to match framerate of animator
+    time_interval = 0.05  # 50 milliseconds for each frame
+    nseg = segparms['nseg']
+    nr_frames = np.ceil((t[-1] - t[0]) / time_interval).astype(int) + 1
+    t_new = np.linspace(0, t[-1], num=nr_frames)
+    segdynstate_new = np.zeros((2 * nseg + 4, nr_frames))
+    for i in range(2 * nseg + 4):
+        segdynstate_new[i, :] = np.interp(t_new, t, segdynstate[i])
+
+    # calculate joint coordinates
+    joint, *_ = jointcoord(segdynstate_new, segparms)
+    jointx, jointy = joint
+
+    # determine range of image?? / user defined initial frame??
+
+    # initiate figure
+    fig = plt.figure()
+    ax = plt.axes(xlim=(-axlim, axlim),
+                  ylim=(-axlim, axlim))
+    ax.set_aspect('equal', adjustable='box')
+    line_rope, = ax.plot([], [], lw=2)
+    line_body, = ax.plot([], [], lw=2)
+
+    # initiate line
+    def init_fig():
+        line_rope.set_data([], [])
+        line_body.set_data([], [])
+        return [line_rope, line_body]
+
+    def animate(i, jointx, jointy):
+        # appending values to the previously
+        # empty x and y data holders
+        xdata = jointx[:, i]
+        ydata = jointy[:, i]
+        line_rope.set_data(xdata[:-4], ydata[:-4])
+        line_body.set_data(xdata[-5:], ydata[-5:])
+        return [line_rope, line_body]
+
+    # calling the animation function
+    anim = animation.FuncAnimation(fig, animate, init_func=init_fig,
+                                   fargs=(jointx, jointy),
+                                   frames=nr_frames,
+                                   interval=time_interval * 1000,
+                                   blit=True)
+    # make sure plot renders and shows
+    plt.draw()
+    plt.show()
+
+    # save the animation somewhere. To be implemented later ??
+    # anim.save('whateverName.mp4', writer = 'ffmpeg', fps = 1/time_interval/1000??)
+
+    return anim  # NECESARRY to return!!
+
 
 if __name__ == "__main__":
     x = 0
@@ -240,5 +295,5 @@ if __name__ == "__main__":
     # phis, phids, base_pos, base_vel = readsegdynstate(state0, len(system))
     # print(f"Phis: {phis}")
 
-    animate(sol.t, sol.y, segparms, axlim=6)
+    our_animate(sol.t, sol.y, segparms, axlim=6)
 
