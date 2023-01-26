@@ -121,15 +121,17 @@ def readsegdynstate(segdynstate, nseg):
 def swingparms(system):
     segparms = get_segparms(system)
     rope_stiffness = 50
-    rope_damping = 5
+    rope_damping = 15
     frequency = 2.5
-    hip_moment_mult = 100
+    hip_moment_mult = 60
+    shoulder_moment_mult = 30
     swingparms = {
         'segparms': segparms,
         'rope_stiffness': rope_stiffness,
         'rope_damping': rope_damping,
         'frequency': frequency,
-        'hip_moment_mult': hip_moment_mult
+        'hip_moment_mult': hip_moment_mult,
+        'shoulder_moment_mult': shoulder_moment_mult
     }
     return swingparms
 
@@ -148,6 +150,7 @@ def swingshell(t, state, parms):
     rope_damping = parms['rope_damping']
     frequency = parms['frequency']
     hip_moment_mult = parms['hip_moment_mult']
+    shoulder_moment_mult = parms['shoulder_moment_mult']
 
     segdynstate = state[0: 2 * nseg + 4]
     phis, phids, base_pos, base_vel = readsegdynstate(segdynstate, nseg)
@@ -167,8 +170,16 @@ def swingshell(t, state, parms):
         moment = stiff + damp
         Ms = np.append(Ms, moment)
 
-    hip_moment = np.sin(frequency * t) * hip_moment_mult
+    rope_ang = phis[0] + 0.5 * np.pi
+    rope_vel = phids[0]
+    # hip_moment = np.sin(frequency * t) * hip_moment_mult
+    # hip_moment = rope_ang * hip_moment_mult
+    hip_moment = rope_vel * hip_moment_mult
+    shoulder_moment = rope_vel * shoulder_moment_mult
     Ms[-2] = hip_moment
+    Ms[-3] = shoulder_moment
+    # print(f"Moment {hip_moment}, Rope Ang {rope_ang}, Rope Acc {rope_acc}")
+
 
     # V 7 * nseg + 5
     Fx = np.concatenate((np.full(nseg, np.nan), np.array([0])))        # Fx nseg + 1,
