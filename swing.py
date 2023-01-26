@@ -121,9 +121,6 @@ def swing(system):
     print(f"Last State: {segdynstate[:, -1]}")
 
 
-    print(segdynstate[:, -1])
-
-
     return sol, segparms
 
 if __name__ == "__main__":

@@ -153,7 +153,6 @@ def our_animate(t,segdynstate,segparms,axlim=2):
         # empty x and y data holders
         xdata = jointx[:, i]
         ydata = jointy[:, i]
-        print(f"X {xdata}, arms {xdata[-5:-4]}")
         line_rope.set_data(xdata[:-4], ydata[:-4])
         line_arms.set_data(xdata[-5:-3], ydata[-5:-3])
         line_body.set_data(xdata[-4:], ydata[-4:])
