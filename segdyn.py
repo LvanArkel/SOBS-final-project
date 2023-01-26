@@ -581,7 +581,7 @@ def animate(t,segdynstate,segparms,axlim=2):
     time_interval=0.05 # 50 milliseconds for each frame
     nseg=segparms['nseg']
     nr_frames=np.ceil((t[-1]-t[0])/time_interval).astype(int) + 1
-    t_new=np.linspace(0,t[-1],num=nr_frames)
+    t_new=np.linspace(t[0],t[-1],num=nr_frames)
     segdynstate_new=np.zeros((2*nseg+4,nr_frames))
     for i in range(2*nseg+4):
         segdynstate_new[i,:]=np.interp(t_new, t, segdynstate[i])
