@@ -1,4 +1,3 @@
-import scipy.integrate as integrate
 from segdyn import *
 from shared import *
 
@@ -72,7 +71,7 @@ def swingshell(t, state, parms):
 
     rope_ang = phis[0] + 0.5 * np.pi
     rope_vel = phids[0]
-    # hip_moment = np.sin(frequency * t) * hip_moment_mult
+    hip_moment = np.sin(frequency * t) * hip_moment_mult
     # hip_moment = rope_ang * hip_moment_mult
     # hip_moment = rope_vel * hip_moment_mult
 

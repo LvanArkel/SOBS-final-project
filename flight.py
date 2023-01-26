@@ -1,7 +1,5 @@
 from shared import *
 
-
-
 def flightparms(system):
     segparms = get_segparms(system)
     stiffness = 50
@@ -106,3 +104,20 @@ def flight(system):
     print(f"Last State: {segdynstate[:, -1]}")
 
     return sol, segparms
+
+
+if __name__ == "__main__":
+    x = 0
+    rope = make_rope()
+    body = make_body()
+    system = rope + body
+
+    # plot_single_state(system)
+
+    sol, segparms = flight(system)
+
+    # state0 = sol.y[0]
+    # phis, phids, base_pos, base_vel = readsegdynstate(state0, len(system))
+    # print(f"Phis: {phis}")
+
+    animate(sol.t, sol.y, segparms, axlim=7)

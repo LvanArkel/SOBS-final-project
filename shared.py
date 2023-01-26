@@ -1,7 +1,6 @@
-import numpy as np
-from rigidbody import RigidBody
-import matplotlib.pyplot as plt
 from segdyn import *
+from rigidbody import RigidBody
+import scipy.integrate as integrate
 
 
 # Global Settings
