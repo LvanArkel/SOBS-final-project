@@ -138,7 +138,10 @@ def swingparms(system):
 
 def swingstate(system):
     segdynstate = get_state(system)
-    # Ms = np.zeros(rope_segments)
+    segdynstate = [-2.0541526, -2.09858616, -2.09903548, -2.085879, -2.13957014, -1.26554274,
+     -1.4586276,   0.89461135,  0.89946407,  0.87659005,  0.94474495,  1.47547233,
+     3.44077558,  3.44315349,  0,          0,          0,          0]
+     # Ms = np.zeros(rope_segments)
     state = segdynstate
     return state
 
@@ -207,7 +210,7 @@ def swing(system):
     parms = swingparms(system)
     print(parms)
 
-    t_span = [0, 30]
+    t_span = [45, 55]
     ODE = lambda t, state: swingshell(t, state, parms)[0]
 
     sol = integrate.solve_ivp(ODE, t_span, initial_state, rtol=1e-8, atol=1e-8)
@@ -219,6 +222,7 @@ def swing(system):
     plt.figure()
     plot_feet_y(segdynstate, segparms, sol.t)
 
+    print(f"Last State: {segdynstate[:, -1]}")
 
     return sol, segparms
 
