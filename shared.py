@@ -116,12 +116,24 @@ def plot_feet_y(segdynstate, segparms, time):
     plt.plot(time, jointy[-1, :])
 
 
+def swingstate_to_flight_state(swingstate, base_vel=None):
+    phis, phids, base_pos, old_base_vel = readsegdynstate(swingstate, 8)
+    if base_vel is None:
+        base_vel = old_base_vel
+    newphis = phis[-4:]
+    newphids = phids[-4:]
+    return np.concatenate((newphis, newphids, base_pos, base_vel))
+
 
 def our_animate(t,segdynstate,segparms,axlim=2):
     # nr of frames and time interval, such that total simulation time is accurate
     # interpolate data to match framerate of animator
     time_interval = 0.05  # 50 milliseconds for each frame
     nseg = segparms['nseg']
+
+    if t[0] != 0:
+        t = t - t[0]
+
     nr_frames = np.ceil((t[-1] - t[0]) / time_interval).astype(int) + 1
     t_new = np.linspace(0, t[-1], num=nr_frames)
     segdynstate_new = np.zeros((2 * nseg + 4, nr_frames))

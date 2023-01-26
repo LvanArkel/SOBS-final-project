@@ -19,8 +19,7 @@ def swingparms(system):
         'rope_stiffness': rope_stiffness,
         'rope_damping': rope_damping,
         'frequency': frequency,
-        'hip_moment_mult': hip_moment_mult,
-        'shoulder_moment_mult': shoulder_moment_mult
+        'hip_moment_mult': hip_moment_mult
     }
     return swingparms
 
@@ -29,16 +28,9 @@ def swingstate(system, base_pos, base_vel):
     segdynstate = get_state(system, base_pos, base_vel)
     segdynstate = [-2.25964921, -2.35331292, -2.36967297, -2.37276211, -2.36394001, -2.19942433,
  -3.40328011, -3.10805272,  0.16127535,  0.04865359,  0.0291509,  -0.00940969,
- -0.13438966, -0.59134242, -1.70180314, -2.32473594,  0.,          0.,
-  0.,          0.        ]
+ -0.13438966, -0.59134242, -1.70180314, -2.32473594,  0,          0,
+  0,          0]
 
-    # segdynstate = get_state(system)
-    # Ms = np.zeros(rope_segments)
-    # segdynstate = get_state(system, base_pos, base_vel)
-    # segdynstate = [-2.0541526, -2.09858616, -2.09903548, -2.085879, -2.13957014, -1.26554274,
-    #  -1.4586276,   0.89461135,  0.89946407,  0.87659005,  0.94474495,  1.47547233,
-    #  3.44077558,  3.44315349,  0,          0,          0,          0]
-     # Ms = np.zeros(rope_segments)
     state = segdynstate
     return state
 
@@ -50,7 +42,6 @@ def swingshell(t, state, parms):
     rope_damping = parms['rope_damping']
     frequency = parms['frequency']
     hip_moment_mult = parms['hip_moment_mult']
-    shoulder_moment_mult = parms['shoulder_moment_mult']
 
     segdynstate = state[0: 2 * nseg + 4]
     phis, phids, base_pos, base_vel = readsegdynstate(segdynstate, nseg)
@@ -70,8 +61,6 @@ def swingshell(t, state, parms):
         moment = stiff + damp
         Ms = np.append(Ms, moment)
 
-    rope_ang = phis[0] + 0.5 * np.pi
-    rope_vel = phids[0]
     hip_moment = np.sin(frequency * t) * hip_moment_mult
     # hip_moment = rope_ang * hip_moment_mult
     # hip_moment = rope_vel * hip_moment_mult
@@ -79,7 +68,6 @@ def swingshell(t, state, parms):
     Ms[-2] += hip_moment
     # Ms[-3] += shoulder_moment
     # print(f"Moment {hip_moment}, Rope Ang {rope_ang}, Rope Acc {rope_acc}")
-
 
     # V 7 * nseg + 5
     Fx = np.concatenate((np.full(nseg, np.nan), np.array([0])))        # Fx nseg + 1,
@@ -101,13 +89,41 @@ def swingshell(t, state, parms):
     return stated, output
 
 
+def plot_angmom(systemstates, solt, parms):
+    # systemstates = (nseg, nsamples
+    print(f"Systemstates {systemstates}, Len {len(systemstates)}")
+    print(f"Parms, {parms}")
+
+    resize = ['m', 'L', 'd', 'J']
+    for val in resize:
+        parms[val] = parms[val][-4:]
+    parms['nseg'] = 4
+    print(f"Parms {parms}")
+    body_phis = systemstates[4:8]
+    body_phids = systemstates[12:16]
+    base_pos_vel = systemstates[16:]
+    print(f"Phis {body_phis}, Phids {body_phids}, pos_vel {base_pos_vel}")
+    bodystates = np.concatenate((body_phis, body_phids, base_pos_vel))
+    print(f"Body states {len(bodystates)}")
+
+    ang, _ = angmom(bodystates, parms)
+    plt.plot(ang, solt)
+    idx = np.argmax(ang)
+    print(f"Time of most ang mom {solt[idx]}")
+    last_y = [[item[idx]] for item in bodystates]
+    _, (jointxd, jointyd), _ = jointcoord([last_y], parms)
+    arm_base_vel = [jointxd[4], jointyd[4]]
+    print(f"Arm base Vel {repr(arm_base_vel)}")
+    print(f"State of most ang mom {repr([item[0] for item in last_y])}")
+
+
 
 def swing(system, base_pos, base_vel):
     initial_state = swingstate(system, base_pos, base_vel)
     parms = swingparms(system)
     print(parms)
 
-    t_span = [0, 30]
+    t_span = [120, 121]
     ODE = lambda t, state: swingshell(t, state, parms)[0]
 
     sol = integrate.solve_ivp(ODE, t_span, initial_state, rtol=1e-8, atol=1e-8)
@@ -119,8 +135,15 @@ def swing(system, base_pos, base_vel):
     plt.figure()
     plot_feet_y(segdynstate, segparms, sol.t)
 
-    print(f"Last State: {segdynstate[:, -1]}")
+    last = segdynstate[:, -1]
+    print(f"Last State: {repr(last)}")
+    last_y = [[item[-1]] for item in sol.y]
+    _, (jointxd, jointyd), _ = jointcoord(last_y, parms['segparms'])
+    arm_base_vel = [jointxd[4], jointyd[4]]
+    print(f"Arm base Vel {repr(arm_base_vel)}")
 
+    plt.figure()
+    plot_angmom(sol.y, sol.t, parms['segparms'])
 
     return sol, segparms
 
@@ -139,6 +162,8 @@ if __name__ == "__main__":
     # state0 = sol.y[0]
     # phis, phids, base_pos, base_vel = readsegdynstate(state0, len(system))
     # print(f"Phis: {phis}")
+
+
 
     our_animate(sol.t, sol.y, segparms, axlim=7)
 

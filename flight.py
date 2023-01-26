@@ -1,3 +1,5 @@
+import numpy as np
+
 from shared import *
 
 def flightparms(system):
@@ -17,11 +19,15 @@ def flightparms(system):
     return swingparms
 
 
+
+
 def flightstate(system):
-    segdynstate = get_state(system)
-    # segdynstate = [-2.0541526, -2.09858616, -2.09903548, -2.085879, -2.13957014, -1.26554274,
-    #  -1.4586276,   0.89461135,  0.89946407,  0.87659005,  0.94474495,  1.47547233,
-    #  3.44077558,  3.44315349,  0,          0,          0,          0]
+    swingstate = [-1.93631052, -1.9427537,  -1.94559113, -1.94372898, -1.91598567, -1.72270379,
+ -2.94029564, -2.80618342, -1.17536461, -1.32594788, -1.34492584, -1.3792784,
+ -1.44323542, -0.9633936,   0.16177069,  1.29321739 , 0.,          0.,
+  0.,          0.        ]
+    swingbase_vel = [-2.43451612, 0.94845105]
+    segdynstate = swingstate_to_flight_state(swingstate, swingbase_vel)
      # Ms = np.zeros(rope_segments)
     state = segdynstate
     return state
@@ -62,14 +68,14 @@ def flightshell(t, state, parms):
 
 
     # V 7 * nseg + 5
-    Fx = np.concatenate((np.full(nseg, np.nan), np.array([0])))        # Fx nseg + 1,
-    Fy = np.concatenate((np.full(nseg, np.nan), np.array([0])))       # Fy nseg + 1,
-    M = np.concatenate((Ms, np.zeros(1)))        # M nseg + 1,
+    Fx = np.concatenate( (np.array([0]), np.full(nseg - 1, np.nan), np.array([0])))        # Fx nseg + 1,
+    Fy = np.concatenate((np.array([0]), np.full(nseg - 1, np.nan), np.array([0])))       # Fy nseg + 1,
+    M = np.concatenate((Ms, np.zeros(1)))   # M nseg + 1,
     Fextx = np.zeros(nseg)    # Fextx nseg,
     Fexty = m * g           # Fexty nseg,
     Mext = np.zeros(nseg)   # Mext nseg,
     phidd = np.full(nseg, np.nan)    # phidd nseg,
-    base_acc = [0, 0]       # xbdd, ybdd
+    base_acc = [np.nan, np.nan]       # xbdd, ybdd
 
     V = np.concatenate((Fx, Fy, M, Fextx, Fexty, Mext, phidd, base_acc))
     # print(f"Length V: {len(V)}, should be: {7 * nseg + 5}")
@@ -87,7 +93,7 @@ def flight(system):
     parms = flightparms(system)
     print(parms)
 
-    t_span = [0, 10]
+    t_span = [0, 2]
     ODE = lambda t, state: flightshell(t, state, parms)[0]
 
     sol = integrate.solve_ivp(ODE, t_span, initial_state, rtol=1e-8, atol=1e-8)
@@ -99,16 +105,17 @@ def flight(system):
     plt.figure()
     plot_feet_y(segdynstate, segparms, sol.t)
 
-    print(f"Last State: {segdynstate[:, -1]}")
+    print(f"Last State: {repr(segdynstate[:, -1])}")
 
     return sol, segparms
 
 
 if __name__ == "__main__":
     x = 0
-    rope = make_rope()
+    base_pos = [0, 6]
+    base_vel = [0, 0]
     body = make_body()
-    system = rope + body
+    system = body
 
     # plot_single_state(system)
 
