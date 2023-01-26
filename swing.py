@@ -26,13 +26,13 @@ def swingparms(system):
     return swingparms
 
 
-def swingstate(system):
-    segdynstate = [-1.94036625, -1.99794535, -2.00456897, -2.00666025, -2.01304106, -1.94749094,
- -3.39876688, -3.21799289,  0.50835549,  0.55571912,  0.56852215,  0.57119324,
-  0.54845258,  0.26056143,  0.65145562,  0.12220817,  0.,          0.,
+def swingstate(system, base_pos, base_vel):
+    segdynstate = get_state(system, base_pos, base_vel)
+    segdynstate = [-2.25964921, -2.35331292, -2.36967297, -2.37276211, -2.36394001, -2.19942433,
+ -3.40328011, -3.10805272,  0.16127535,  0.04865359,  0.0291509,  -0.00940969,
+ -0.13438966, -0.59134242, -1.70180314, -2.32473594,  0.,          0.,
   0.,          0.        ]
 
-    # segdynstate = get_state(system)
     # Ms = np.zeros(rope_segments)
     state = segdynstate
     return state
@@ -98,12 +98,12 @@ def swingshell(t, state, parms):
 
 
 
-def swing(system):
-    initial_state = swingstate(system)
+def swing(system, base_pos, base_vel):
+    initial_state = swingstate(system, base_pos, base_vel)
     parms = swingparms(system)
     print(parms)
 
-    t_span = [0, 30]
+    t_span = [120, 121]
     ODE = lambda t, state: swingshell(t, state, parms)[0]
 
     sol = integrate.solve_ivp(ODE, t_span, initial_state, rtol=1e-8, atol=1e-8)
@@ -131,7 +131,7 @@ def our_animate(t,segdynstate,segparms,axlim=2):
     time_interval = 0.05  # 50 milliseconds for each frame
     nseg = segparms['nseg']
     nr_frames = np.ceil((t[-1] - t[0]) / time_interval).astype(int) + 1
-    t_new = np.linspace(0, t[-1], num=nr_frames)
+    t_new = np.linspace(t[0], t[-1], num=nr_frames)
     segdynstate_new = np.zeros((2 * nseg + 4, nr_frames))
     for i in range(2 * nseg + 4):
         segdynstate_new[i, :] = np.interp(t_new, t, segdynstate[i])
@@ -181,13 +181,15 @@ def our_animate(t,segdynstate,segparms,axlim=2):
 
 if __name__ == "__main__":
     x = 0
+    base_pos = [0, 0]
+    base_vel = [0, 0]
     rope = make_rope()
     body = make_body()
     system = rope + body
 
     # plot_single_state(system)
 
-    sol, segparms = swing(system)
+    sol, segparms = swing(system, base_pos, base_vel)
 
     # state0 = sol.y[0]
     # phis, phids, base_pos, base_vel = readsegdynstate(state0, len(system))
