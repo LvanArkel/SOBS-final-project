@@ -1,5 +1,6 @@
 import numpy as np
 
+import segdyn
 from shared import *
 
 def flightparms(system):
@@ -7,14 +8,18 @@ def flightparms(system):
     stiffness = 50
     damping = 10
     frequency = 1.7
-    hip_moment_mult = 150
-    shoulder_moment_mult = 0.7
+    hip_moment_mult = 50
+    shoulder_moment_mult = 30
+    shoulder_angle = -0.25 * np.pi
+    hip_angle = -0.25 * np.pi
     swingparms = {
         'segparms': segparms,
         'stiffness': stiffness,
         'damping': damping,
         'hip_moment_mult': hip_moment_mult,
-        'shoulder_moment_mult': shoulder_moment_mult
+        'shoulder_moment_mult': shoulder_moment_mult,
+        'shoulder_angle': shoulder_angle,
+        'hip_angle': hip_angle
     }
     return swingparms
 
@@ -22,12 +27,13 @@ def flightparms(system):
 
 
 def flightstate(system):
-    swingstate = [-1.86503057, -1.89215125, -1.892467  , -1.89009032, -1.89254894,
-       -1.93107123, -1.76578462, -1.7960798 ,  0.57694302,  0.63301128,
-        0.62706037,  0.66608912,  0.96329365,  2.06334383,  6.34132209,
-        6.88543933,  0.        ,  0.        ,  0.        ,  0.        ]
-    swingbase_vel = [1.19003784, -0.3872925]
-    segdynstate = swingstate_to_flight_state(swingstate, swingbase_vel)
+    swingstate = [-0.9121063 , -0.85812016, -0.85011183, -0.85049494, -0.85832449,
+       -1.04205367, -0.12453037, -0.51850652,  0.50177495,  0.67365286,
+        0.7051935 ,  0.68995334,  0.59797652,  0.46833777,  1.26711656,
+        1.33613255,  0.        ,  8.        ,  0.        ,  0.        ]
+    swingbase_pos = [1.29272637, 6.47481468]
+    swingbase_vel = [0.97746026, 0.83402999]
+    segdynstate = swingstate_to_flight_state(swingstate, swingbase_pos, swingbase_vel)
      # Ms = np.zeros(rope_segments)
     state = segdynstate
     return state
@@ -39,6 +45,9 @@ def flightshell(t, state, parms):
     stiffness = parms['stiffness']
     damping = parms['damping']
     hip_moment_mult = parms['hip_moment_mult']
+    shoulder_moment_mult = parms['shoulder_moment_mult']
+    shoulder_angle = parms['shoulder_angle']
+    hip_angle = parms['hip_angle']
 
     segdynstate = state[0: 2 * nseg + 4]
     phis, phids, base_pos, base_vel = readsegdynstate(segdynstate, nseg)
@@ -61,9 +70,11 @@ def flightshell(t, state, parms):
     # hip_moment = np.sin(frequency * t) * hip_moment_mult
     # hip_moment = rope_ang * hip_moment_mult
     # hip_moment = rope_vel * hip_moment_mult
+    current_shoulder_angle = phis[1] - phis[0]
+    current_hip_angle = phis[2] - phis[1]
 
-    # Ms[-2] += hip_moment
-    # Ms[-3] += shoulder_moment
+    Ms[1] += (shoulder_angle - current_shoulder_angle) * shoulder_moment_mult
+    Ms[2] += (hip_angle - current_hip_angle) * hip_moment_mult
     # print(f"Moment {hip_moment}, Rope Ang {rope_ang}, Rope Acc {rope_acc}")
 
 
@@ -87,6 +98,13 @@ def flightshell(t, state, parms):
 
     return stated, output
 
+def collision_event(t, state, parms):
+    segparms = parms['segparms']
+    (_, jointy), *_ = jointcoord(state, segparms)
+    criterion = jointy.min()
+    if criterion < 1 and criterion > -1:
+        print(criterion)
+    return criterion
 
 def flight(system):
     initial_state = flightstate(system)
@@ -94,12 +112,24 @@ def flight(system):
     print(parms)
 
     t_span = [0, 2]
-    ODE = lambda t, state: flightshell(t, state, parms)[0]
+    ODE = lambda t, state, parms: flightshell(t, state, parms)[0]
+    collision_event.terminal = True
 
-    sol = integrate.solve_ivp(ODE, t_span, initial_state, rtol=1e-8, atol=1e-8)
+    sol = integrate.solve_ivp(ODE, t_span, initial_state, args=(parms,), events=collision_event, rtol=1e-8, atol=1e-8)
 
     segparms = parms['segparms']
     segdynstate = sol.y[0: 2 * segparms['nseg'] + 4]
+    (_, jointy), *_ = jointcoord(segdynstate, segparms)
+    lowestjoint = np.argmin(jointy[:, -1])
+    jointmap = {
+        0: "Hands",
+        1: "Shoulders",
+        2: "Hips",
+        3: "Knees",
+        4: "Feet"
+    }
+    print(f"Lowest joint: {jointmap[lowestjoint]}")
+
     plt.figure()
     plot_energies(segdynstate, segparms, sol.t)
     plt.figure()

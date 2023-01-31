@@ -117,8 +117,10 @@ def plot_feet_y(segdynstate, segparms, time):
     plt.plot(time, jointy[-1, :])
 
 
-def swingstate_to_flight_state(swingstate, base_vel=None):
-    phis, phids, base_pos, old_base_vel = readsegdynstate(swingstate, 8)
+def swingstate_to_flight_state(swingstate, base_pos=None, base_vel=None):
+    phis, phids, old_base_pos, old_base_vel = readsegdynstate(swingstate, 8)
+    if base_pos is None:
+        base_pos = old_base_pos
     if base_vel is None:
         base_vel = old_base_vel
     newphis = phis[-4:]

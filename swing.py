@@ -1,10 +1,7 @@
+from datetime import datetime
+
 from segdyn import *
 from shared import *
-
-
-# Settings for the base
-base_pos = [0, 0]
-base_vel = [0, 0]
 
 
 def swingparms(system):
@@ -28,7 +25,7 @@ def swingstate(system, base_pos, base_vel):
     segdynstate = get_state(system, base_pos, base_vel)
     segdynstate = [-2.25964921, -2.35331292, -2.36967297, -2.37276211, -2.36394001, -2.19942433,
  -3.40328011, -3.10805272,  0.16127535,  0.04865359,  0.0291509,  -0.00940969,
- -0.13438966, -0.59134242, -1.70180314, -2.32473594,  0,          0,
+ -0.13438966, -0.59134242, -1.70180314, -2.32473594,  0,          8,
   0,          0]
 
     state = segdynstate
@@ -125,33 +122,44 @@ def swing(system, base_pos, base_vel):
     parms = swingparms(system)
     print(parms)
 
-    t_span = [120, 124.57723045423722]
+    # t_span = [120, 124.57723045423722]
+    t_span = [120, 121.66]
     ODE = lambda t, state: swingshell(t, state, parms)[0]
 
+    t0 = datetime.now()
     sol = integrate.solve_ivp(ODE, t_span, initial_state, rtol=1e-8, atol=1e-8)
+    t1 = datetime.now()
+
+    print(f"Simulation time: {t1-t0}")
 
     segparms = parms['segparms']
     segdynstate = sol.y[0: 2 * segparms['nseg'] + 4]
     plt.figure()
+    plt.title("Energy")
     plot_energies(segdynstate, segparms, sol.t)
     plt.figure()
+    plt.title("Y (feet)")
     plot_feet_y(segdynstate, segparms, sol.t)
 
     last = segdynstate[:, -1]
     print(f"Last State: {repr(last)}")
     last_y = [[item[-1]] for item in sol.y]
-    _, (jointxd, jointyd), _ = jointcoord(last_y, parms['segparms'])
-    arm_base_vel = [jointxd[4], jointyd[4]]
+    (jointx, jointy), (jointxd, jointyd), _ = jointcoord(last_y, parms['segparms'])
+    arm_base_pos = [jointx[-5], jointy[-5]]
+    arm_base_vel = [jointxd[-5], jointyd[-5]]
+    print(f"Arm base pos {repr(arm_base_pos)}")
     print(f"Arm base Vel {repr(arm_base_vel)}")
 
+
     plt.figure()
+    plt.title("Angular momentum")
     plot_angmom(sol.y, sol.t, parms['segparms'])
 
     return sol, segparms
 
 if __name__ == "__main__":
     x = 0
-    base_pos = [0, 0]
+    base_pos = [0, 8]
     base_vel = [0, 0]
     rope = make_rope()
     body = make_body()

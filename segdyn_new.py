@@ -48,9 +48,12 @@ def segdyn(state: (list[RigidBody], ((float, float), (float, float))), V, Acons=
         # Fill in b_star
         b_star[i] = -rb.m*rb.d*rb.cos()*rb.phid**2
         b_star[n+i] = -rb.m*rb.d*rb.sin()*rb.phid**2
+    print(A_star)
+    print(b_star)
     # TODO: Add constraints
     A = A_star[:,unknowns]
     b = b_star - A_star[:,knowns]@[V[i] for i in knowns]
+    print(b)
     x = np.linalg.solve(A, b)
     Vnew = V.copy()
     for i, u in enumerate(unknowns):
