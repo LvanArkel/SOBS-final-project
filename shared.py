@@ -128,7 +128,7 @@ def swingstate_to_flight_state(swingstate, base_pos=None, base_vel=None):
     return np.concatenate((newphis, newphids, base_pos, base_vel))
 
 
-def our_animate(t,segdynstate,segparms,axlim=2):
+def our_animate(t,segdynstate,segparms,axlim=2, slowdown=1):
     # nr of frames and time interval, such that total simulation time is accurate
     # interpolate data to match framerate of animator
     time_interval = 0.05  # 50 milliseconds for each frame
@@ -166,8 +166,8 @@ def our_animate(t,segdynstate,segparms,axlim=2):
     def animate(i, jointx, jointy):
         # appending values to the previously
         # empty x and y data holders
-        xdata = jointx[:, i]
-        ydata = jointy[:, i]
+        xdata = jointx[:, i//slowdown]
+        ydata = jointy[:, i//slowdown]
         line_rope.set_data(xdata[:-4], ydata[:-4])
         line_arms.set_data(xdata[-5:-3], ydata[-5:-3])
         line_body.set_data(xdata[-4:], ydata[-4:])
@@ -176,7 +176,7 @@ def our_animate(t,segdynstate,segparms,axlim=2):
     # calling the animation function
     anim = animation.FuncAnimation(fig, animate, init_func=init_fig,
                                    fargs=(jointx, jointy),
-                                   frames=nr_frames,
+                                   frames=nr_frames*slowdown,
                                    interval=time_interval * 1000,
                                    blit=True)
     # make sure plot renders and shows
